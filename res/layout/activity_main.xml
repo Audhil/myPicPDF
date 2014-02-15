@@ -1,0 +1,40 @@
+<RelativeLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:padding="3dp" >
+    
+    <ListView 
+        android:id="@+id/recordList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/bottomLayout"
+        android:divider="#272727"
+        android:dividerHeight="1dp"/>
+        
+    <!-- Camera button -->
+    <LinearLayout
+        android:id="@+id/bottomLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#80000000"
+        android:orientation="vertical"
+        tools:ignore="UselessParent" >
+    	
+        <ImageButton
+            android:id="@+id/cameraButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/round_corners_button"
+            android:contentDescription="dummy"
+            android:padding="10dp"
+            android:src="@drawable/ic_action_camera"
+            tools:ignore="HardcodedText" />
+        
+    </LinearLayout>
+
+</RelativeLayout>
