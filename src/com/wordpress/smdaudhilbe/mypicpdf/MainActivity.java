@@ -2,12 +2,13 @@ package com.wordpress.smdaudhilbe.mypicpdf;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -19,7 +20,6 @@ import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -31,12 +31,20 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.wordpress.smdaudhilbe.mypicpdf.adapter.MyItemAdapter;
+import com.wordpress.smdaudhilbe.mypicpdf.database.DatabaseConnectivity;
+import com.wordpress.smdaudhilbe.mypicpdf.model.MyListView;
+
 public class MainActivity extends Activity implements OnClickListener,OnItemClickListener {
 
     private ImageButton cameraBtn;
 	private ListView recordList;
 	private Uri fileUri;
 	private boolean finishApp = false;
+	private DatabaseConnectivity dbConnectivity;
+	private List<MyListView> items;
+	private ArrayList<MyListView> freshItems;
+	private MyItemAdapter iAdapter;
 	
 	private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
 	private static final String IMAGE_DIRECTORY_NAME = "myPicPDF";
@@ -50,6 +58,8 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
+        dbConnectivity = new DatabaseConnectivity(getApplicationContext());
         
         initViewsWithListener();
         
@@ -68,14 +78,13 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 				}
 			})
         	.show();
-        }       	
+        }   
+        //	PDF reader is available
         else{
-        	Toast.makeText(getApplicationContext(), "PDF reader available",Toast.LENGTH_LONG).show();
         	
         	PATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+IMAGE_DIRECTORY_NAME+"/images";
+        	loadListView();
         }
-        
-	    Log.d("externalDirectoryChecked",Environment.getExternalStorageDirectory().getAbsolutePath().toString());
     }
 
 	//	checking for PDFreader
@@ -101,13 +110,10 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		
 		cameraBtn.setOnClickListener(this);
 		recordList.setOnItemClickListener(this);
+		
+		//	freshItems
+		freshItems = new ArrayList<MyListView>();
 	}
-
-	@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
 
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -134,36 +140,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 
 	private File getOutputMediaFile() {
 
-//		//	creating a folder in external storage sdCard
-//		boolean mExternalStorageAvailable = false;
-//	    boolean mExternalStorageWriteable = false;
-//
-//	    String state = Environment.getExternalStorageState();
-//	    
-//	    if (Environment.MEDIA_MOUNTED.equals(state)) {
-//	    	
-//	        mExternalStorageAvailable = true;
-//	        mExternalStorageWriteable = true;
-//	        
-//	    } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-//	    	
-//	        mExternalStorageAvailable = true;
-//	        mExternalStorageWriteable = false;
-//	        
-//	    } else {
-//	    	
-//	        mExternalStorageAvailable = false;
-//	        mExternalStorageWriteable = false;
-//	    }
-//	    
-//	    File exst = Environment.getExternalStorageDirectory();
-//	    String exstPath = exst.getPath();
-//
-//	    File fooo = new File(exstPath+"/myPicPDF");
-//	    boolean success = fooo.mkdir();
-//	    
-//	    Log.d("externalDirectoryCreated","mExternalStorageAvailable : "+mExternalStorageAvailable+"\nmExternalStorageWriteable : "+mExternalStorageWriteable+"\nsuccess : "+success);
-		
 		// External sdcard location
 	    File mediaStorageDir = new File(PATH);
 	 
@@ -182,8 +158,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	    File mediaFile = new File(mediaStorageDir.getPath() + File.separator+ "IMG_" + timeStamp + ".jpg");
         
         PRESENT_PICTURE_PATH = mediaStorageDir.getPath()+ "/IMG_" + timeStamp + ".jpg";
-        
-        Log.d("dummy", PRESENT_PICTURE_PATH);
 
 		return mediaFile;
 	}
@@ -197,9 +171,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	    	if (resultCode == RESULT_OK) {
 	            // successfully captured the image
 	            // display it in image view
-	    		
-	            Toast.makeText(getApplicationContext(),"Image saved!", Toast.LENGTH_SHORT).show();
-	            
 	            getNameOfItemAlertDialog();
 	            
 	        } else if (resultCode == RESULT_CANCELED) {
@@ -242,12 +213,17 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 					public void onClick(View v) {
 						
 						if(TextUtils.isEmpty(eText.getText()))
-							Toast.makeText(MainActivity.this, "Insufficient name",Toast.LENGTH_LONG).show();						
+							Toast.makeText(MainActivity.this, "Insufficient name",Toast.LENGTH_LONG).show();
+						
+						//	to avoid spaces in between
+						else if(eText.getText().toString().contains(" "))
+							Toast.makeText(MainActivity.this, "Invalid name! Use single word as document name!",Toast.LENGTH_LONG).show(); 
+						
+						//	inserting name of document and creating sub table
+						else if(!dbConnectivity.putinmyPicPDF(eText.getText().toString(),fileUri+""));
 
 						else{
-							
-							populateListView(eText.getText().toString());
-							
+							loadListView();
 							alert.cancel();							
 						}
 					}
@@ -273,22 +249,33 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		alert.show();
 	}
 
-	//	adding an element dynamically into listview
-	private void populateListView(String docuName) {
-		
-		if(docuName.equals("New Document")){
-			
-		}
-	}
 	
 	//	delete picture
 	private void deletePicture(String pRESENT_PICTURE_PATH) {
-//		getFileStreamPath(pRESENT_PICTURE_PATH).delete();
-//		deleteFile(pRESENT_PICTURE_PATH);
 		
 		boolean val = new File(pRESENT_PICTURE_PATH).delete();
 		
         Log.d("val", val+"");
+	}
+	
+	//	loading listview
+	private void loadListView() {
+		
+		items = dbConnectivity.getFrommyPicPDF();
+		
+		for(MyListView mItem : items) {
+			freshItems.add(mItem);
+		}
+		
+		iAdapter = new MyItemAdapter(MainActivity.this,0, freshItems); 
+		
+		recordList.setAdapter(iAdapter);
+		
+		//	if no items inside listview
+		if(iAdapter.isEmpty()){
+			View emptyView = (View)findViewById(R.id.emptyTView);
+			recordList.setEmptyView(emptyView);
+		}
 	}
 
 	@Override

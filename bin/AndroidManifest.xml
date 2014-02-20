@@ -10,6 +10,9 @@
     
     <!-- External Storage -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    
+    <!-- Camera Feature -->
+    <uses-feature android:name="android.hardware.camera"/>
 
     <application
         android:allowBackup="true"

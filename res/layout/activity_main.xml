@@ -36,5 +36,16 @@
             tools:ignore="HardcodedText" />
         
     </LinearLayout>
+    
+    <!-- Empty textView -->
+    <TextView
+        android:id="@+id/emptyTView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="No Documents"
+        android:textSize="30sp"
+        tools:ignore="HardcodedText" 
+        android:visibility="gone"/>
 
 </RelativeLayout>

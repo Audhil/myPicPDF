@@ -5,12 +5,19 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.wordpress.smdaudhilbe.mypicpdf.model.MyListView;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.widget.Toast;
 
 public class DatabaseConnectivity extends SQLiteOpenHelper {
 	
@@ -120,7 +127,16 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-		db.execSQL("create table myPicPDF(_slNo integer auto increment primary key,docuName text,created_at datetime default current_timestamp);");
+		
+		db.execSQL("create table myPicPDF(_slNo integer auto increment," +
+				"docuName text primary key," +
+				"docuPicPath text not null," +
+				"created_at timestamp default current_timestamp);");
+		
+//		db.execSQL("create table myPicPDF(_slNo integer auto increment," +
+//											"docuName text primary key," +
+//											"docuPicPath text not null," +
+//											"created_at datetime default current_timestamp);");
 	}
 
 	@Override
@@ -129,5 +145,93 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		db.execSQL("drop table if exists myPicPDF;");
 		
 		onCreate(db);
+	}
+
+	//	storing inside myPicPDF table
+	public boolean putinmyPicPDF(String docuName, String pRESENT_PICTURE_PATH) {
+		
+		ContentValues cValues = new ContentValues();
+		
+		if(checkForDuplicates(docuName)){
+			
+			cValues.put("docuName",docuName);
+			cValues.put("docuPicPath", pRESENT_PICTURE_PATH);
+			
+			SQLiteDatabase db = this.getWritableDatabase();
+		
+			db.insert("myPicPDF",null,cValues);
+			
+			//	create another table to hold pictures
+			db.execSQL("create table "+docuName+"(picNo text not null);");
+			
+			db.close();
+			
+			return true;
+		}
+		
+		else{
+			
+			SQLiteDatabase db = this.getWritableDatabase();
+			
+			db.close();
+			
+			return false;
+		}
+	}
+
+	//	checking for duplicates
+	private boolean checkForDuplicates(String docuName) {
+		
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.rawQuery("select * from myPicPDF where docuName='"+docuName+"';",null);
+		
+		if(cursor.moveToFirst()){
+				
+			Toast.makeText(context,"You already registered \""+docuName+"!\"", Toast.LENGTH_LONG).show();
+				
+			cursor.close();
+			db.close();
+				
+			return false;
+		}
+		//	cursor is not empty - data is not available there so allow to get data from user 
+		else{
+				
+			cursor.close();
+			db.close();
+				
+			return true;
+		}
+	}
+	
+	//	getting data for myPicPDF table
+	public List<MyListView> getFrommyPicPDF() {
+		
+		List<MyListView> list = new ArrayList<MyListView>();
+		
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.query("myPicPDF", new String[] {"docuName","docuPicPath","created_at"}, null,null,null,null,"created_at"+" DESC");
+		
+		if(cursor.moveToFirst()){
+			
+			do {
+				
+				MyListView mList = new MyListView();
+				
+				mList.setItemName(cursor.getString(0));
+				mList.setItemPicPath(cursor.getString(1));
+				mList.setItemCreatedAt(cursor.getString(2));
+				
+				list.add(mList);
+				
+			} while (cursor.moveToNext());
+		}
+		
+		cursor.close();
+		db.close();
+		
+		return list;
 	}
 }
