@@ -129,14 +129,9 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		
 		db.execSQL("create table myPicPDF(_slNo integer auto increment," +
-				"docuName text primary key," +
-				"docuPicPath text not null," +
-				"created_at timestamp default current_timestamp);");
-		
-//		db.execSQL("create table myPicPDF(_slNo integer auto increment," +
-//											"docuName text primary key," +
-//											"docuPicPath text not null," +
-//											"created_at datetime default current_timestamp);");
+											"docuName text primary key," +
+											"docuPicPath text not null," +
+											"created_at date default (datetime('now','localtime')));");
 	}
 
 	@Override

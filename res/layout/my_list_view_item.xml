@@ -5,6 +5,7 @@
     android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingLeft="3dp"
     android:orientation="vertical" >
 
     <TextView
@@ -13,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_marginLeft="25dp"
+        
         android:layout_marginTop="15dp"
         android:hint="document Name"
         tools:ignore="HardcodedText" />
@@ -24,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_alignRight="@+id/docuName"
         android:layout_below="@+id/docuName"
-        android:layout_marginLeft="25dp"
+        
         android:layout_marginTop="15dp"
         android:hint="document Date N Time"
         tools:ignore="HardcodedText" />
