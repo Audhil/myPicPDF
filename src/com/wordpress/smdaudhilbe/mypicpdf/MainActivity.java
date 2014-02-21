@@ -25,6 +25,7 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -33,9 +34,10 @@ import android.widget.Toast;
 
 import com.wordpress.smdaudhilbe.mypicpdf.adapter.MyItemAdapter;
 import com.wordpress.smdaudhilbe.mypicpdf.database.DatabaseConnectivity;
+import com.wordpress.smdaudhilbe.mypicpdf.database.MySharedPreference;
 import com.wordpress.smdaudhilbe.mypicpdf.model.MyListView;
 
-public class MainActivity extends Activity implements OnClickListener,OnItemClickListener {
+public class MainActivity extends Activity implements OnClickListener,OnItemClickListener, OnItemLongClickListener {
 
     private ImageButton cameraBtn;
 	private ListView recordList;
@@ -45,6 +47,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	private List<MyListView> items;
 	private ArrayList<MyListView> freshItems;
 	private MyItemAdapter iAdapter;
+	private MySharedPreference mPreference;
 	
 	private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
 	private static final String IMAGE_DIRECTORY_NAME = "myPicPDF";
@@ -60,6 +63,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
         setContentView(R.layout.activity_main);
         
         dbConnectivity = new DatabaseConnectivity(getApplicationContext());
+        mPreference = new MySharedPreference(getApplicationContext());
         
         initViewsWithListener();
         
@@ -110,6 +114,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		
 		cameraBtn.setOnClickListener(this);
 		recordList.setOnItemClickListener(this);
+		recordList.setOnItemLongClickListener(this);
 		
 		//	freshItems
 		freshItems = new ArrayList<MyListView>();
@@ -223,7 +228,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 						else if(!dbConnectivity.putinmyPicPDF(eText.getText().toString(),fileUri+""));
 
 						else{
-							loadListView();
+							updateListView(mPreference.getDocuName());
 							alert.cancel();							
 						}
 					}
@@ -263,9 +268,8 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		
 		items = dbConnectivity.getFrommyPicPDF();
 		
-		for(MyListView mItem : items) {
+		for(MyListView mItem : items)
 			freshItems.add(mItem);
-		}
 		
 		iAdapter = new MyItemAdapter(MainActivity.this,0,freshItems); 
 		
@@ -276,6 +280,17 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 			View emptyView = (View)findViewById(R.id.emptyTView);
 			recordList.setEmptyView(emptyView);
 		}
+	}
+	
+	//	dynamically updating listview
+	public void updateListView(String docuName) {
+		
+		//	deleting docuname from shared preference
+		mPreference.storeDocuName("");
+		
+		//	adding new item in freshItems at 0th position
+		freshItems.add(0,dbConnectivity.getItem(docuName));
+		iAdapter.notifyDataSetChanged();
 	}
 
 	@Override
@@ -323,5 +338,35 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 				Log.d("countDownTimer",""+finishApp);
 			}
 		}.start();
+	}
+
+	@Override
+	public boolean onItemLongClick(AdapterView<?> parent, View view, final int position,long id) {
+	
+		new AlertDialog.Builder(MainActivity.this)
+		
+			.setMessage("Delete document?")
+			.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					
+					freshItems.remove(position);
+					iAdapter.notifyDataSetChanged();
+					
+					//	removing all resources
+					
+				}
+			})
+			.setNegativeButton("No",new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					
+				}
+			})
+			.show();
+		
+		return false;
 	}
 }

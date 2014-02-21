@@ -28,10 +28,14 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 	
 	private Context context;
 
+	private MySharedPreference mPreference;
+
 	public DatabaseConnectivity(Context context) {
 		
 		super(context, DB_NAME,null,1);	
 		this.context = context;
+		
+		mPreference = new MySharedPreference(context);
 	}
 	
 	//	creating a empty database
@@ -161,17 +165,14 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 			
 			db.close();
 			
+			//	storing inside shared Preference
+			mPreference.storeDocuName(docuName);
+			
 			return true;
 		}
 		
-		else{
-			
-			SQLiteDatabase db = this.getWritableDatabase();
-			
-			db.close();
-			
-			return false;
-		}
+		else			
+			return false;		
 	}
 
 	//	checking for duplicates
@@ -228,5 +229,40 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		db.close();
 		
 		return list;
+	}
+	
+	//	getting Item
+	public MyListView getItem(String docuName) {
+		
+		MyListView mListView = new MyListView();
+		
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.rawQuery("select * from myPicPDF where docuName='"+docuName+"';",null);
+		
+		if(cursor.moveToFirst()){
+			
+			mListView.setItemName(cursor.getString(1));
+			mListView.setItemPicPath(cursor.getString(2));
+			mListView.setItemCreatedAt(cursor.getString(3));
+			
+			cursor.close();
+			db.close();
+		}		
+		return mListView;
+	}
+	
+	//	deleting item
+	public void deleteFrommyPicPDF(String docuName) {
+		
+		SQLiteDatabase db = this.getWritableDatabase();
+		
+		//	deleting from myPicPDF
+		db.delete("myPicPDF","docuName=?",new String[]{docuName});
+		
+		//	deleting the respective table
+		db.execSQL("drop table if exists "+docuName+";");		
+		
+		db.close();
 	}
 }
