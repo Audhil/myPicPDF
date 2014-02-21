@@ -35,6 +35,6 @@ public class SplashActivity extends Activity {
                 // close this activity
                 finish();
 			}
-		}, 5000);
+		}, 3000);
 	}	
 }

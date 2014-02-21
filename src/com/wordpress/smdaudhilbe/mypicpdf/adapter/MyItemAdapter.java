@@ -33,7 +33,7 @@ public class MyItemAdapter extends ArrayAdapter<MyListView> {
 	
 	@SuppressLint("NewApi")
 	@Override
-	public View getView(final int position, View convertView, ViewGroup parent) {
+	public View getView(int position, View convertView, ViewGroup parent) {
 		
 		ViewHolder vHolder;
 	
@@ -64,8 +64,6 @@ public class MyItemAdapter extends ArrayAdapter<MyListView> {
 		
 		if(vHolder.iView != null)
 			new imageDownloaderTask(vHolder.iView).execute(mListView.getItemPicPath());
-		
-		this.notifyDataSetChanged();
 		
 		return convertView;
 	}

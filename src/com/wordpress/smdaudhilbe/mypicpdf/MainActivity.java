@@ -53,7 +53,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
     public static String PATH = "";
     
     public static String PRESENT_PICTURE_PATH = "";
-    static int i = 0;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,8 +84,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
         	
         	PATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+IMAGE_DIRECTORY_NAME+"/images";
         	loadListView();
-        	
-        	Log.d("I am at MainActivity onCreate", "loadListView() executed ... "+i++);
         }
     }
 
