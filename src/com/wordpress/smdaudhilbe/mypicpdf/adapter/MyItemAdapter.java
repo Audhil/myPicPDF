@@ -1,6 +1,5 @@
 package com.wordpress.smdaudhilbe.mypicpdf.adapter;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import android.annotation.SuppressLint;
@@ -9,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,9 +21,11 @@ import com.wordpress.smdaudhilbe.mypicpdf.model.MyListView;
 
 public class MyItemAdapter extends ArrayAdapter<MyListView> {
 
-	private Context context;
+	private static Context context;
 	private ArrayList<MyListView> listOfItem;
 
+	@SuppressWarnings("static-access")
+	@SuppressLint("NewApi")
 	public MyItemAdapter(Context context, int resource,ArrayList<MyListView> aList) {
 		super(context, resource,aList);
 		
@@ -31,10 +33,9 @@ public class MyItemAdapter extends ArrayAdapter<MyListView> {
 		listOfItem = aList;
 	}
 	
-	@SuppressLint("NewApi")
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		
+	
 		ViewHolder vHolder;
 	
 		if(convertView == null){
@@ -63,67 +64,122 @@ public class MyItemAdapter extends ArrayAdapter<MyListView> {
 		vHolder.dateNTime.setText(mListView.getitemCreatedAt());
 		
 		if(vHolder.iView != null)
-			new imageDownloaderTask(vHolder.iView).execute(mListView.getItemPicPath());
+			Image.loadToView(mListView.getItemPicPath(),vHolder.iView);
 		
 		return convertView;
 	}
 	
-	private class imageDownloaderTask extends AsyncTask<String,Void,Bitmap>{
-
-		WeakReference<ImageView> iViewRef;
+	private static class Image{
 		
-		public imageDownloaderTask(ImageView iView) {			
-			iViewRef = new WeakReference<ImageView>(iView); 
-		}
+		private static LruCache<String, Bitmap> mMemoryCache = null;
+	    private static int cacheSize = 1024 * 1024 * 10;
+	
+	    private static class imageDownloaderTask extends AsyncTask<String,Void,Bitmap>{
 
-		@Override
-		protected Bitmap doInBackground(String... params) {			
-			return getBitmapImage(params[0]);
-		}
-		
+	    	private ImageView mTarget;
+
+	    	public imageDownloaderTask(ImageView target) {
+	    		this.mTarget = target;
+	    	}
+
+	    	@Override
+	    	protected void onPreExecute() {
+	    		mTarget.setTag(this);
+	    	}
+
+	    	@SuppressLint("NewApi")
+	    	@Override
+	    	protected Bitmap doInBackground(String...urls) {
+        	
+	    		String url = urls[0];
+
+	    		Bitmap result = null;
+
+	    		if (url != null) {
+	    			result = load(url);
+
+	    			if (result != null) 
+	    				mMemoryCache.put(url,result);	    			
+	    		}
+	    		return result;
+	    	}
+
+	    	@Override
+	    	protected void onPostExecute(Bitmap result) {
+        	
+	    		if(mTarget.getTag() == this) {
+	    			mTarget.setTag(null);
+                
+	    			if(result != null)
+	    				mTarget.setImageBitmap(result);
+                
+	    		} else if (mTarget.getTag() != null) {
+            	
+	    			((imageDownloaderTask) mTarget.getTag()).cancel(true);
+	    			mTarget.setTag(null);
+	    		}
+	    	}
+	    }
+
+	    public static Bitmap load(String urlString) {
+    	
+	    	BitmapFactory.Options options = new BitmapFactory.Options();
+        
+	    	// downsizing image as it throws OutOfMemory Exception for larger
+	    	// images
+	    	options.inSampleSize = 16;
+	
+	    	Bitmap bitmap =  BitmapFactory.decodeFile(Uri.parse(urlString).getPath(),options);
+        
+	    	if (bitmap == null)
+	    		bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.list_placeholder);
+
+	    	return bitmap;
+	    }
+
+	    @SuppressLint("NewApi")
+		public static void loadToView(String url,ImageView view) {
+    	
+	    	if (url == null || url.length() == 0) 
+	    		return;
+        
+	    	if (mMemoryCache == null) {
+        	
+	    		mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+	    			
+	    			@Override
+	    			protected int sizeOf(String key, Bitmap bitmap) {
+	    				return (bitmap.getRowBytes() * bitmap.getHeight());
+	    			}
+	    		};
+	    	}
+
+	    	Bitmap bitmap = getBitmapFromMemCache(url);
+	    	
+	    	if (bitmap == null) {
+	    		
+	    		final imageDownloaderTask task = (imageDownloaderTask) new imageDownloaderTask(view);
+	    		
+	    		view.setTag(task);
+	    		view.setRotation(90);
+	    		
+	    		task.execute(url);	    		
+	    	} else {
+            	view.setImageBitmap(bitmap);
+            	view.setRotation(90);
+	    	}
+	    }
+	    
+//		getting Bitmap from memory cache
 		@SuppressLint("NewApi")
-		@Override
-		protected void onPostExecute(Bitmap bitmap) {		
-			super.onPostExecute(bitmap);
-			
-			if(isCancelled()){
-				bitmap = null;
-			}
-			
-			if(iViewRef != null){
-				
-				ImageView imageView = iViewRef.get();
-				
-				if(imageView != null){
-					
-					if (bitmap != null){ 						
-						imageView.setImageBitmap(bitmap);
-						imageView.setRotation(90);
-					}
-					
-					else{
-						imageView.setImageDrawable(imageView.getContext().getResources().getDrawable(R.drawable.list_placeholder));
-						imageView.setRotation(90);
-					}
-				}
-			}
-		}
-
-		//	getting bitmap image
-		private Bitmap getBitmapImage(String itemPicPath) {
-
-			BitmapFactory.Options options = new BitmapFactory.Options();
-	        
-	        // downsizing image as it throws OutOfMemory Exception for larger
-	        // images
-	        options.inSampleSize = 16;
-		
-			return BitmapFactory.decodeFile(Uri.parse(itemPicPath).getPath(),options);
-		}
+		public static Bitmap getBitmapFromMemCache(String url) {
+			return (Bitmap)mMemoryCache.get(url); 
+	    }
 	}
 	
 	//	ViewHolder
-	static class ViewHolder{
+	class ViewHolder{
+		
 		TextView dName;
 		TextView dateNTime;
 		ImageView iView;

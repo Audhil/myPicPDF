@@ -13,6 +13,7 @@
     
     <!-- Camera Feature -->
     <uses-feature android:name="android.hardware.camera"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <!-- Main activity -->
     <application

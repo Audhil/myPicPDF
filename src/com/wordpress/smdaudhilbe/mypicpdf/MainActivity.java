@@ -9,6 +9,7 @@ import java.util.Locale;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,6 +17,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.text.TextUtils;
@@ -48,6 +50,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	private ArrayList<MyListView> freshItems;
 	private MyItemAdapter iAdapter;
 	private MySharedPreference mPreference;
+	private Vibrator vB;
 	
 	private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
 	private static final String IMAGE_DIRECTORY_NAME = "myPicPDF";
@@ -65,10 +68,14 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
         dbConnectivity = new DatabaseConnectivity(getApplicationContext());
         mPreference = new MySharedPreference(getApplicationContext());
         
+        vB = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
+        
         initViewsWithListener();
         
         // 	check whether pdf reader is available or not
         if(!checkForPDFReader()){
+        	
+        	vB.vibrate(100);
         	
         	new AlertDialog.Builder(MainActivity.this)
         	.setTitle("myPicPDF")
@@ -190,6 +197,8 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	}
 	
 	private void getNameOfItemAlertDialog() {
+		
+		vB.vibrate(100);
 		
 		final EditText eText = new EditText(MainActivity.this);
 		eText.setHint("New Document");
@@ -317,6 +326,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 			finish();
 			
 			Log.d("onBackPressed",""+finishApp);
+			vB.vibrate(50);
 		}
 		
 		else{
@@ -341,7 +351,9 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	}
 
 	@Override
-	public boolean onItemLongClick(AdapterView<?> parent, View view, final int position,long id) {
+	public boolean onItemLongClick(final AdapterView<?> parent, View view, final int position,long id) {
+		
+		vB.vibrate(100);
 	
 		new AlertDialog.Builder(MainActivity.this)
 		
@@ -351,10 +363,17 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
 					
+					MyListView mListView = new MyListView();
+					
+					mListView = (MyListView) parent.getItemAtPosition(position);
+					
 					freshItems.remove(position);
 					iAdapter.notifyDataSetChanged();
 					
 					//	removing all resources
+					dbConnectivity.deleteFrommyPicPDF(mListView.getItemName());
+					
+					//	deleting photos
 					
 				}
 			})
@@ -365,8 +384,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 					
 				}
 			})
-			.show();
-		
+			.show();		
 		return false;
 	}
 }
