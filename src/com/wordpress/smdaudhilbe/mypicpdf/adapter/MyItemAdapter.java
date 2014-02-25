@@ -132,7 +132,7 @@ public class MyItemAdapter extends ArrayAdapter<MyListView> {
 	    	Bitmap bitmap =  BitmapFactory.decodeFile(Uri.parse(urlString).getPath(),options);
         
 	    	if (bitmap == null)
-	    		bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.list_placeholder);
+	    		bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.place_holder);
 
 	    	return bitmap;
 	    }

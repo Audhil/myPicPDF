@@ -43,14 +43,12 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		
 		boolean dbExist = checkDB();
 		
-		if(dbExist)
-			;//	do nothing
+		//	do nothing
+		if(dbExist);
 		
-		else
-		{
-			//	creating an empty database into the default system path / so that we can replace it with our own
-			this.getReadableDatabase();
-			
+		//	creating an empty database into the default system path / so that we can replace it with our own
+		else{			
+			this.getReadableDatabase();			
 			copyDB();
 		}
 	}
@@ -84,9 +82,10 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 			
 		//	copying from local db to system empty db
 		try {
-			while ((length = in.read(buffer)) > 0) {
+			
+			while ((length = in.read(buffer)) > 0)
 				out.write(buffer,0,length);
-			}
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -141,13 +140,12 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		
-		db.execSQL("drop table if exists myPicPDF;");
-		
+		db.execSQL("drop table if exists myPicPDF;");		
 		onCreate(db);
 	}
 
 	//	storing inside myPicPDF table
-	public boolean putinmyPicPDF(String docuName, String pRESENT_PICTURE_PATH) {
+	public boolean putinmyPicPDF(String docuName,String pRESENT_PICTURE_PATH) {
 		
 		ContentValues cValues = new ContentValues();
 		
@@ -168,9 +166,10 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 			//	storing inside shared Preference
 			mPreference.storeDocuName(docuName);
 			
+			//	creating a folder in
+			
 			return true;
-		}
-		
+		}		
 		else			
 			return false;		
 	}
@@ -201,7 +200,7 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		}
 	}
 	
-	//	getting data for myPicPDF table
+	//	getting data for myPicPDF table - for loadListView();
 	public List<MyListView> getFrommyPicPDF() {
 		
 		List<MyListView> list = new ArrayList<MyListView>();
@@ -231,7 +230,7 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		return list;
 	}
 	
-	//	getting Item
+	//	getting Item - for updateListView();
 	public MyListView getItem(String docuName) {
 		
 		MyListView mListView = new MyListView();

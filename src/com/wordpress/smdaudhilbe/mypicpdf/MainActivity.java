@@ -39,7 +39,7 @@ import com.wordpress.smdaudhilbe.mypicpdf.database.DatabaseConnectivity;
 import com.wordpress.smdaudhilbe.mypicpdf.database.MySharedPreference;
 import com.wordpress.smdaudhilbe.mypicpdf.model.MyListView;
 
-public class MainActivity extends Activity implements OnClickListener,OnItemClickListener, OnItemLongClickListener {
+public class MainActivity extends Activity implements OnClickListener,OnItemClickListener,OnItemLongClickListener {
 
     private ImageButton cameraBtn;
 	private ListView recordList;
@@ -91,11 +91,8 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
         	.show();
         }   
         //	PDF reader is available
-        else{
-        	
-        	PATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+IMAGE_DIRECTORY_NAME+"/images";
-        	loadListView();
-        }
+        else
+        	loadListView();        
     }
 
 	//	checking for PDFreader
@@ -127,11 +124,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		freshItems = new ArrayList<MyListView>();
 	}
 
-	@Override
-	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-		
-	}
-
 	//	to launch camera activity
 	@Override
 	public void onClick(View view) {
@@ -140,7 +132,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		
 		fileUri = getOutputMediaFileUri();
 		 
-		intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+		intent.putExtra(MediaStore.EXTRA_OUTPUT,fileUri);
 		 
 		// start the image capture Intent
 		startActivityForResult(intent,CAMERA_CAPTURE_IMAGE_REQUEST_CODE);
@@ -151,6 +143,11 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	}
 
 	private File getOutputMediaFile() {
+		
+		// Create a media file name
+	    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.getDefault()).format(new Date());
+		
+		PATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+IMAGE_DIRECTORY_NAME+"/images/"+timeStamp;
 
 		// External sdcard location
 	    File mediaStorageDir = new File(PATH);
@@ -164,38 +161,14 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	        }
 	    }
 	    
-	    // Create a media file name
-	    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.getDefault()).format(new Date());
-	    
+	    // Create a media file name	    
 	    File mediaFile = new File(mediaStorageDir.getPath() + File.separator+ "IMG_" + timeStamp + ".jpg");
         
         PRESENT_PICTURE_PATH = mediaStorageDir.getPath()+ "/IMG_" + timeStamp + ".jpg";
 
 		return mediaFile;
 	}
-	
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-		// if the result is capturing Image
-	    if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE) {
-	    
-	    	if (resultCode == RESULT_OK) {
-	            // successfully captured the image
-	            // display it in image view
-	            getNameOfItemAlertDialog();
-	            
-	        } else if (resultCode == RESULT_CANCELED) {
-	            // user cancelled Image capture
-	            Toast.makeText(getApplicationContext(),"User cancelled image capture", Toast.LENGTH_SHORT).show();
-	            
-	        } else {
-	            // failed to capture image
-	            Toast.makeText(getApplicationContext(),"Sorry! Failed to capture image", Toast.LENGTH_SHORT).show();
-	        }
-	    }
-	}
-	
+		
 	private void getNameOfItemAlertDialog() {
 		
 		vB.vibrate(100);
@@ -227,11 +200,11 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 					public void onClick(View v) {
 						
 						if(TextUtils.isEmpty(eText.getText()))
-							Toast.makeText(MainActivity.this, "Insufficient name",Toast.LENGTH_LONG).show();
+							Toast.makeText(MainActivity.this,"Insufficient name",Toast.LENGTH_LONG).show();
 						
 						//	to avoid spaces in between
 						else if(eText.getText().toString().contains(" "))
-							Toast.makeText(MainActivity.this, "Invalid name! Use single word as document name!",Toast.LENGTH_LONG).show(); 
+							Toast.makeText(MainActivity.this,"Invalid name! Use single word as document name!",Toast.LENGTH_LONG).show(); 
 						
 						//	inserting name of document and creating sub table
 						else if(!dbConnectivity.putinmyPicPDF(eText.getText().toString(),fileUri+""));
@@ -250,8 +223,12 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 					@Override
 					public void onClick(View v) {
 						
-						deletePicture(PRESENT_PICTURE_PATH);
+//						deletePicture(PATH);						
+//						new File(PRESENT_PICTURE_PATH).delete();
 						
+						Log.d("present picPath value Is : ", new File(PRESENT_PICTURE_PATH).delete()+"");
+						
+				        Log.d("value Is : ", new File(PATH).delete()+"");			            
 						alert.cancel();
 					}
 				});
@@ -265,12 +242,14 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 
 	
 	//	delete picture
-	private void deletePicture(String pRESENT_PICTURE_PATH) {
-		
-		boolean val = new File(pRESENT_PICTURE_PATH).delete();
-		
-        Log.d("val", val+"");
-	}
+//	private void deletePicture(String pRESENT_PICTURE_PATH) {
+//		
+//		Log.d("path is : ", pRESENT_PICTURE_PATH);
+//		
+//		boolean val = new File(pRESENT_PICTURE_PATH).delete();
+//		
+//        Log.d("val", val+"");
+//	}
 	
 	//	loading listview
 	private void loadListView() {
@@ -303,12 +282,81 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	}
 
 	@Override
+	public boolean onItemLongClick(final AdapterView<?> parent, View view, final int position,long id) {
+		
+		vB.vibrate(100);
+	
+		new AlertDialog.Builder(MainActivity.this)		
+			.setMessage("Delete document?")
+			.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					
+					MyListView mListView = new MyListView();
+					
+					mListView = (MyListView) parent.getItemAtPosition(position);
+					
+					freshItems.remove(position);
+					iAdapter.notifyDataSetChanged();
+					
+					//	removing all resources
+					//	hence it also removes the pic folder
+					dbConnectivity.deleteFrommyPicPDF(mListView.getItemName());
+				}
+			})
+			.setNegativeButton("No",new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					
+				}
+			})
+			.show();		
+		return false;
+	}
+	
+	@Override
+	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+		
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data){
+
+		// if the result is capturing Image
+	    if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE) {
+
+            // successfully captured the image
+            // display it in image view
+	    	if (resultCode == RESULT_OK) 
+	            getNameOfItemAlertDialog();
+	            
+	    	// user cancelled Image capture
+	        else if (resultCode == RESULT_CANCELED){	            
+	            Toast.makeText(getApplicationContext(),"You cancelled image capture!", Toast.LENGTH_SHORT).show();
+	            
+	            //	deleting folder which was created
+	            new File(PATH).delete();
+	        }
+
+            // failed to capture image
+	        else{
+	            Toast.makeText(getApplicationContext(),"Sorry! failed to capture image", Toast.LENGTH_SHORT).show();
+	            
+	            //	deleting folder which was created
+	            new File(PATH).delete();
+	        }
+	    }
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
 		// save file url in bundle as it will be null on scren orientation
 	    // changes
-	    outState.putParcelable("file_uri", fileUri);
+	    outState.putParcelable("file_uri",fileUri);
 	}
 	
 	@Override
@@ -348,43 +396,5 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 				Log.d("countDownTimer",""+finishApp);
 			}
 		}.start();
-	}
-
-	@Override
-	public boolean onItemLongClick(final AdapterView<?> parent, View view, final int position,long id) {
-		
-		vB.vibrate(100);
-	
-		new AlertDialog.Builder(MainActivity.this)
-		
-			.setMessage("Delete document?")
-			.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					
-					MyListView mListView = new MyListView();
-					
-					mListView = (MyListView) parent.getItemAtPosition(position);
-					
-					freshItems.remove(position);
-					iAdapter.notifyDataSetChanged();
-					
-					//	removing all resources
-					dbConnectivity.deleteFrommyPicPDF(mListView.getItemName());
-					
-					//	deleting photos
-					
-				}
-			})
-			.setNegativeButton("No",new DialogInterface.OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					
-				}
-			})
-			.show();		
-		return false;
 	}
 }
