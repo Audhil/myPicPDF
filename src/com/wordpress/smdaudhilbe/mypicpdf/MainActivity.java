@@ -21,7 +21,6 @@ import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -155,10 +154,8 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	    // Create the storage directory if it does not exist
 	    if (!mediaStorageDir.exists()) {
 	    	
-	        if (!mediaStorageDir.mkdirs()) {   	
-	            Log.d(IMAGE_DIRECTORY_NAME, "Oops! Failed create "+ IMAGE_DIRECTORY_NAME + " directory");
-	            return null;
-	        }
+	        if (!mediaStorageDir.mkdirs())
+	            return null;	        
 	    }
 	    
 	    // Create a media file name	    
@@ -172,7 +169,7 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 	private void getNameOfItemAlertDialog() {
 		
 		vB.vibrate(100);
-		
+			
 		final EditText eText = new EditText(MainActivity.this);
 		eText.setHint("New Document");
 		InputFilter[] fArray = new InputFilter[1];
@@ -223,12 +220,12 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 					@Override
 					public void onClick(View v) {
 						
-//						deletePicture(PATH);						
-//						new File(PRESENT_PICTURE_PATH).delete();
+						//	deleting created image inside folder
+						new File(PRESENT_PICTURE_PATH).delete();
 						
-						Log.d("present picPath value Is : ", new File(PRESENT_PICTURE_PATH).delete()+"");
+						//	deleting Folder itself
+						new File(PATH).delete();
 						
-				        Log.d("value Is : ", new File(PATH).delete()+"");			            
 						alert.cancel();
 					}
 				});
@@ -239,17 +236,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);		
 		alert.show();
 	}
-
-	
-	//	delete picture
-//	private void deletePicture(String pRESENT_PICTURE_PATH) {
-//		
-//		Log.d("path is : ", pRESENT_PICTURE_PATH);
-//		
-//		boolean val = new File(pRESENT_PICTURE_PATH).delete();
-//		
-//        Log.d("val", val+"");
-//	}
 	
 	//	loading listview
 	private void loadListView() {
@@ -316,9 +302,15 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		return false;
 	}
 	
+	//	Launching DetailActivity
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		
+		MyListView mListView = new MyListView();
+		
+		mListView = (MyListView) parent.getItemAtPosition(position);
+		
+		startActivity(new Intent(MainActivity.this,DetailActivity.class).putExtra("ActionBarTitleName", mListView.getItemName()));
 	}
 	
 	@Override
@@ -373,7 +365,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 		if(finishApp){
 			finish();
 			
-			Log.d("onBackPressed",""+finishApp);
 			vB.vibrate(50);
 		}
 		
@@ -393,7 +384,6 @@ public class MainActivity extends Activity implements OnClickListener,OnItemClic
 			@Override
 			public void onFinish() {
 				finishApp = false;
-				Log.d("countDownTimer",""+finishApp);
 			}
 		}.start();
 	}

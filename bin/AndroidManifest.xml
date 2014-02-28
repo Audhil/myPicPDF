@@ -41,6 +41,13 @@
             
         </activity>
         
+        <!-- Detail activity -->
+        <activity 
+            android:name="DetailActivity"
+            android:parentActivityName="com.wordpress.smdaudhilbe.mypicpdf.MainActivity">
+            
+        </activity>
+        
     </application>
 
 </manifest>

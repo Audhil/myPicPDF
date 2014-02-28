@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/detail_more"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_action_overflow">
+        
+        	<menu >
+        	    
+        	    <item android:id="@+id/action_search"
+			          android:icon="@drawable/ic_action_camera"
+          			  android:title="waste"
+          			  android:showAsAction="always"  />
+        	    
+		       <item android:id="@+id/action_compose"
+          			 android:icon="@drawable/ic_action_overflow"
+          			 android:title="waste" 
+          			 android:showAsAction="always"/>      
+            </menu>
+    </item>
+
+</menu>

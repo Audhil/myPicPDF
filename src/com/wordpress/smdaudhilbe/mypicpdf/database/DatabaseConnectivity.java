@@ -1,5 +1,6 @@
 package com.wordpress.smdaudhilbe.mypicpdf.database;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -251,8 +252,11 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		return mListView;
 	}
 	
-	//	deleting item
+	//	deleting item - onItemLongClick();
 	public void deleteFrommyPicPDF(String docuName) {
+		
+		//	delete the folder
+		deleteThisFolderFirst(docuName);
 		
 		SQLiteDatabase db = this.getWritableDatabase();
 		
@@ -263,5 +267,35 @@ public class DatabaseConnectivity extends SQLiteOpenHelper {
 		db.execSQL("drop table if exists "+docuName+";");		
 		
 		db.close();
+	}
+
+	//	deleting the image folder
+	private void deleteThisFolderFirst(String docuName) {
+		
+		SQLiteDatabase db = this.getReadableDatabase();
+
+		Cursor cursor = db.rawQuery("select * from myPicPDF where docuName='"+docuName+"';",null);
+		
+		if(cursor.moveToFirst()){
+			
+			String[] splits = cursor.getString(2).split("/");
+			
+			String pathOfFolderToDelete = "/"+splits[3]+"/"+splits[4]+"/"+splits[5]+"/"+splits[6]+"/"+splits[7];
+			
+			deleteFilesAndFolders(new File(pathOfFolderToDelete));
+		}
+		
+		cursor.close();
+		db.close();
+	}
+
+	//	recursive method to delete files and folders
+	private void deleteFilesAndFolders(File fileOrFolder) {
+		
+		if(fileOrFolder.isDirectory())
+			for(File Child : fileOrFolder.listFiles())
+				deleteFilesAndFolders(Child);		
+		
+		fileOrFolder.delete();
 	}
 }
